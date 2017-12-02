@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+
+<body>
+    <h1>Joint Trajectory Slider</h1>
+    <div id="slider_container">
+        <input type="range" min="0" max="1" step="0.01" value="0" class="slider" id="joint_slider">
+    </div>
+    <div id="slider_value_text"></div>
+</body>
+
+<script type="text/javascript" src="roslib.js"></script>
+
+<script type="text/javascript" type="text/javascript">
+
+    // Set the topic and joint name
+    var topic_name = '/my_robot/gripper_controller/command';
+    var joint_name = 'gripper_joint';
+
+    // Set ROS port number
+	var ros_url = 'ws://localhost:9090';
+	// Connect to ROS
+    var ros = new ROSLIB.Ros({
+        url : ros_url
+    });
+
+    // Get variables for the slider and the text below it
+    var joint_slider = document.getElementById("joint_slider");
+    var slider_value_text = document.getElementById("slider_value_text");
+
+    // Display initial slider value
+    slider_value_text.innerHTML = joint_slider.value;
+
+    // Create publisher
+    var joint_pub = new ROSLIB.Topic({
+        ros : ros,
+        name : topic_name,
+        messageType : 'trajectory_msgs/JointTrajectory'
+    });
+
+    // Callback function for when the slider moves
+    joint_slider.oninput = function slider_function() {
+        // Display current slider value
+        var slider_value = Number(this.value);
+        slider_value_text.innerHTML = slider_value;
+
+        // Construct the JointTrajectory message
+        var points_slot = new ROSLIB.Message({
+            positions : [slider_value],
+            velocities : [0],
+            accelerations : [0],
+            effort : [0.1],
+            time_from_start : {
+                secs : 1,
+                nsecs: 0
+            }
+        })
+        var traj_msg = new ROSLIB.Message({
+            header : {
+				// seq increments when multiple messages are published
+                seq : 0,
+                stamp : {
+                    secs: 0,
+                    nsecs : 0
+                },
+                frame_id : ''
+            },
+            joint_names : [joint_name],
+            points : [points_slot]
+        });
+
+        // Publish the message
+        joint_pub.publish(traj_msg);
+    }
+
+</script>
+</html>
